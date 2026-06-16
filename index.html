@@ -27,6 +27,15 @@
       animation: scan 3s linear infinite;
     }
     @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
+    /* Mobile Menu */
+    #mobile-menu {
+      transform: translateY(-100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #mobile-menu.open {
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -34,22 +43,45 @@
   <div class="scanline"></div>
 
   <div class="ui-overlay min-h-screen relative">
-    <header class="border-b border-cyan-500 bg-black/80 backdrop-blur-md sticky top-0 z-50">
+    <!-- Header -->
+    <header class="border-b border-cyan-500 bg-black/90 backdrop-blur-md sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 bg-gradient-to-br from-pink-500 to-cyan-500 rounded-full flex items-center justify-center text-black font-bold text-2xl glitch">N</div>
           <h1 class="text-2xl md:text-3xl font-bold neon-pink tracking-widest">NEXUS BETS</h1>
         </div>
+
+        <!-- Desktop Nav -->
         <nav class="hidden md:flex gap-8 text-lg">
           <a href="#" class="hover:text-pink-400 transition">MATCHES</a>
           <a href="#" class="hover:text-pink-400 transition">LIVE</a>
           <a href="#" class="hover:text-pink-400 transition">MY BETS</a>
           <a href="#" class="hover:text-pink-400 transition">WALLET</a>
         </nav>
+
         <div class="flex items-center gap-3">
           <div class="hidden sm:block bg-zinc-900 px-4 py-2 rounded border border-cyan-500 text-sm font-mono">💰 1247.50 NC</div>
-          <button onclick="connectWallet()" class="px-5 py-2 bg-pink-600 hover:bg-pink-500 rounded font-bold neon-pink">CONNECT JACK</button>
-          <button id="hamburger" class="md:hidden text-3xl p-2"><i class="fas fa-bars"></i></button>
+          <button onclick="connectWallet()" class="px-5 py-2 bg-pink-600 hover:bg-pink-500 rounded font-bold neon-pink text-sm md:text-base">CONNECT JACK</button>
+          
+          <!-- Hamburger -->
+          <button id="hamburger" class="md:hidden text-3xl p-2 text-cyan-400 hover:text-pink-400 transition">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobile-menu" class="hidden md:hidden bg-black/95 border-t border-cyan-500 absolute w-full left-0 z-50">
+        <div class="flex flex-col px-6 py-8 gap-6 text-xl">
+          <a href="#" class="hover:text-pink-400 transition py-2 border-b border-zinc-700">MATCHES</a>
+          <a href="#" class="hover:text-pink-400 transition py-2 border-b border-zinc-700">LIVE</a>
+          <a href="#" class="hover:text-pink-400 transition py-2 border-b border-zinc-700">MY BETS</a>
+          <a href="#" class="hover:text-pink-400 transition py-2 border-b border-zinc-700">WALLET</a>
+          
+          <div class="pt-6 border-t border-cyan-500 text-sm flex items-center gap-3">
+            <span class="text-cyan-400">BALANCE:</span>
+            <span class="font-mono">💰 1247.50 NC</span>
+          </div>
         </div>
       </div>
     </header>
@@ -73,6 +105,7 @@
   </div>
 
   <script>
+    // === THREE.JS + PARTICLES (unchanged from last version) ===
     let scene, camera, renderer, clock;
     let cards = [], rainParticles, sparkParticles;
     let raycaster = new THREE.Raycaster();
@@ -97,7 +130,6 @@
       pinkLight.position.set(10, 15, 10);
       scene.add(pinkLight);
 
-      // Grid
       const grid = new THREE.GridHelper(60, 40, 0x00ffff, 0xff00ff);
       grid.position.y = -2;
       grid.material.opacity = 0.15;
@@ -113,7 +145,8 @@
       animate();
     }
 
-    function createHolographicCards() { /* same as previous version - omitted for brevity */ 
+    // (Card, Rain, Sparks, animate, onResize, onClick functions remain the same as previous version)
+    function createHolographicCards() {
       const matches = [
         { title: "TEAM NEON vs CHROME REAPERS", game: "THE FINALS", odds1: "1.85", odds2: "2.45", pos: [-6, 3, 0] },
         { title: "US FORCES vs PACIFIC ALLIANCE", game: "BATTLEFIELD 2042", odds1: "1.65", odds2: "2.10", pos: [6, 3, -4] },
@@ -133,7 +166,6 @@
               vec2 uv = vUv;
               float glitch = random(vec2(time * 2.0, uv.y)) * 0.015;
               if (random(vec2(time, uv.y)) > 0.97) uv.x += glitch * 3.0;
-              float r = sin(uv.x * 20.0 + time * 5.0) * 0.02;
               vec3 neon = mix(color1, color2, sin(time + uv.y * 10.0) * 0.5 + 0.5);
               float scan = sin(uv.y * 80.0 + time * 20.0) * 0.08 + 0.92;
               float edge = smoothstep(0.0, 0.1, min(uv.x, 1.0-uv.x)) * smoothstep(0.0, 0.1, min(uv.y, 1.0-uv.y));
@@ -159,15 +191,11 @@
       const speeds = new Float32Array(count);
 
       for (let i = 0; i < count; i++) {
-        positions[i*3]     = Math.random() * 80 - 40;
+        positions[i*3] = Math.random() * 80 - 40;
         positions[i*3 + 1] = Math.random() * 60 - 10;
         positions[i*3 + 2] = Math.random() * 40 - 20;
-
-        const hue = Math.random() > 0.5 ? 0.8 : 0.55; // pink/cyan
-        colors[i*3]     = hue;
-        colors[i*3 + 1] = 0.9;
-        colors[i*3 + 2] = 1.0;
-
+        const hue = Math.random() > 0.5 ? 0.8 : 0.55;
+        colors[i*3] = hue; colors[i*3+1] = 0.9; colors[i*3+2] = 1.0;
         speeds[i] = 0.8 + Math.random() * 1.8;
       }
 
@@ -176,12 +204,8 @@
       geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
       const material = new THREE.PointsMaterial({
-        size: 0.12,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending,
-        depthTest: false
+        size: 0.12, vertexColors: true, transparent: true, opacity: 0.7,
+        blending: THREE.AdditiveBlending, depthTest: false
       });
 
       rainParticles = new THREE.Points(geometry, material);
@@ -193,29 +217,19 @@
       const count = 1200;
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
-
       for (let i = 0; i < count; i++) {
-        positions[i*3]     = (Math.random() - 0.5) * 40;
+        positions[i*3] = (Math.random() - 0.5) * 40;
         positions[i*3 + 1] = Math.random() * 20;
         positions[i*3 + 2] = (Math.random() - 0.5) * 30;
-
         const c = Math.random() > 0.5 ? new THREE.Color(0xff00ff) : new THREE.Color(0x00ffff);
         colors[i*3] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
       }
-
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-      const material = new THREE.PointsMaterial({
-        size: 0.08,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.6,
-        blending: THREE.AdditiveBlending
-      });
-
-      sparkParticles = new THREE.Points(geometry, material);
+      sparkParticles = new THREE.Points(geometry, new THREE.PointsMaterial({
+        size: 0.08, vertexColors: true, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending
+      }));
       scene.add(sparkParticles);
     }
 
@@ -224,13 +238,11 @@
       const t = clock.getElapsedTime();
       const delta = clock.getDelta();
 
-      // Animate cards
       cards.forEach(card => {
         card.material.uniforms.time.value = t;
         card.rotation.y = Math.sin(t * 0.5 + card.position.x) * 0.08;
       });
 
-      // Neon Rain
       if (rainParticles) {
         const pos = rainParticles.geometry.attributes.position.array;
         const speeds = rainParticles.userData.speeds;
@@ -241,21 +253,18 @@
         rainParticles.geometry.attributes.position.needsUpdate = true;
       }
 
-      // Gentle spark drift
-      if (sparkParticles) {
-        sparkParticles.rotation.y = t * 0.05;
-      }
+      if (sparkParticles) sparkParticles.rotation.y = t * 0.05;
 
       renderer.render(scene, camera);
     }
 
-    function onResize() { /* same as before */ 
+    function onResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function onClick(e) { /* same as before */ 
+    function onClick(e) {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
@@ -266,17 +275,18 @@
       }
     }
 
-    function placeBetFromCard(data) { /* same */ 
+    // Betting logic
+    function placeBetFromCard(data) {
       slip.push({team: data.title.split(' vs ')[0], odds: data.odds1, matchTitle: data.title});
       slip.push({team: data.title.split(' vs ')[1], odds: data.odds2, matchTitle: data.title});
       renderSlip();
       alert(`Jacked into ${data.game}! Bet options added.`);
     }
 
-    function renderSlip() { /* same as previous */ 
+    function renderSlip() {
       const container = document.getElementById('slip');
       if (slip.length === 0) {
-        container.innerHTML = `<p class="text-zinc-500 text-center py-8">Click neon cards...</p>`;
+        container.innerHTML = `<p class="text-zinc-500 text-center py-8">Click neon cards to bet...</p>`;
         document.getElementById('total-stake').textContent = '0 NC';
         return;
       }
@@ -289,7 +299,7 @@
       document.getElementById('total-stake').textContent = `${slip.length * 50} NC`;
     }
 
-    function submitBet() { /* same */ 
+    function submitBet() {
       if (slip.length === 0) return alert("No bets, choom.");
       alert("Bet placed in the net. Good luck, runner.");
       slip = [];
@@ -300,12 +310,47 @@
       alert("Jacked in — Wallet connected (demo)");
     }
 
-    document.getElementById('hamburger').addEventListener('click', () => {
-      alert("Mobile menu (demo)");
-    });
+    // === HAMBURGER MENU LOGIC ===
+    function initMobileMenu() {
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const icon = hamburger.querySelector('i');
 
+      hamburger.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        setTimeout(() => {
+          mobileMenu.classList.toggle('open');
+        }, 10);
+
+        icon.classList.toggle('fa-bars');
+        icon.classList.toggle('fa-times');
+      });
+
+      // Close menu when clicking a link
+      document.querySelectorAll('#mobile-menu a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+          mobileMenu.classList.remove('open');
+          icon.classList.add('fa-bars');
+          icon.classList.remove('fa-times');
+        });
+      });
+
+      // Close on outside click (optional)
+      document.addEventListener('click', (e) => {
+        if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+          mobileMenu.classList.add('hidden');
+          mobileMenu.classList.remove('open');
+          icon.classList.add('fa-bars');
+          icon.classList.remove('fa-times');
+        }
+      });
+    }
+
+    // Initialize everything
     window.onload = () => {
       initThree();
+      initMobileMenu();
       renderSlip();
     };
   </script>
