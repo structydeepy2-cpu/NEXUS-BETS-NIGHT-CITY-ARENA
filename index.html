@@ -28,10 +28,8 @@
     }
     .scanline {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: linear-gradient(to bottom, transparent 50%, rgba(0,255,255,0.03) 50%);
       background-size: 100% 4px;
       pointer-events: none;
@@ -39,114 +37,222 @@
       animation: scan 4s linear infinite;
     }
     @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
+    /* Mobile improvements */
+    .match-card {
+      transition: all 0.3s ease;
+    }
+    .bet-btn {
+      transition: all 0.2s ease;
+    }
   </style>
 </head>
 <body class="min-h-screen overflow-hidden relative">
   <div class="scanline"></div>
   
   <!-- Header -->
-  <header class="border-b border-cyan-500 bg-black/80 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+  <header class="border-b border-cyan-500 bg-black/90 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-pink-500 to-cyan-500 rounded-full flex items-center justify-center text-black font-bold text-2xl glitch">N</div>
-        <h1 class="text-3xl font-bold neon-pink tracking-widest">NEXUS BETS</h1>
+        <div class="w-9 h-9 bg-gradient-to-br from-pink-500 to-cyan-500 rounded-full flex items-center justify-center text-black font-bold text-2xl glitch">N</div>
+        <h1 class="text-2xl md:text-3xl font-bold neon-pink tracking-widest">NEXUS BETS</h1>
       </div>
-      <nav class="flex gap-8 text-lg">
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex gap-8 text-lg">
         <a href="#" class="hover:text-pink-400 transition">MATCHES</a>
         <a href="#" class="hover:text-pink-400 transition">LIVE</a>
         <a href="#" class="hover:text-pink-400 transition">MY BETS</a>
         <a href="#" class="hover:text-pink-400 transition">WALLET</a>
       </nav>
-      <div class="flex items-center gap-4">
-        <div class="bg-zinc-900 px-4 py-2 rounded border border-cyan-500">💰 1247.50 NC</div>
-        <button onclick="connectWallet()" class="px-6 py-2 bg-pink-600 hover:bg-pink-500 rounded font-bold neon-pink">CONNECT JACK</button>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:block bg-zinc-900 px-4 py-2 rounded border border-cyan-500 text-sm font-mono">💰 1247.50 NC</div>
+        <button onclick="connectWallet()" 
+                class="px-5 py-2 bg-pink-600 hover:bg-pink-500 rounded font-bold neon-pink text-sm md:text-base">
+          CONNECT JACK
+        </button>
+        
+        <!-- Hamburger -->
+        <button id="hamburger" class="md:hidden text-2xl p-2">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-black/95 border-t border-cyan-500 py-4">
+      <div class="flex flex-col px-6 gap-4 text-lg">
+        <a href="#" class="hover:text-pink-400 transition py-2">MATCHES</a>
+        <a href="#" class="hover:text-pink-400 transition py-2">LIVE</a>
+        <a href="#" class="hover:text-pink-400 transition py-2">MY BETS</a>
+        <a href="#" class="hover:text-pink-400 transition py-2">WALLET</a>
+        <div class="pt-4 border-t border-zinc-700 text-sm">💰 1247.50 NC</div>
       </div>
     </div>
   </header>
 
-  <div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-6">
-    <!-- Main Matches -->
-    <div class="col-span-8">
-      <h2 class="text-4xl mb-6 neon-cyan glitch">UPCOMING RUNS</h2>
-      
-      <!-- Example Match Card -->
-      <div class="bg-zinc-900/70 border border-pink-500 rounded-xl p-6 mb-6 hover:border-cyan-400 transition-all group">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="text-sm text-pink-400">THE FINALS • QUICK CASHOUT</div>
-            <div class="text-2xl font-bold">Team Neon vs Chrome Reapers</div>
+  <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <h2 class="text-3xl md:text-4xl mb-6 neon-cyan glitch text-center md:text-left">UPCOMING RUNS</h2>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Matches Column -->
+      <div class="lg:col-span-8 space-y-6">
+        
+        <!-- Match Card 1 -->
+        <div class="match-card bg-zinc-900/70 border border-pink-500 rounded-2xl p-5 md:p-6 hover:border-cyan-400 transition-all group">
+          <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            <div>
+              <div class="text-xs md:text-sm text-pink-400">THE FINALS • QUICK CASHOUT</div>
+              <div class="text-xl md:text-2xl font-bold">Team Neon vs Chrome Reapers</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs opacity-75">STARTS IN</div>
+              <div class="text-3xl md:text-4xl font-mono neon-pink">47m</div>
+            </div>
           </div>
-          <div class="text-right">
-            <div class="text-xs">STARTS IN</div>
-            <div class="text-3xl font-mono neon-pink">47m</div>
+          
+          <div class="grid grid-cols-2 gap-4 mt-8">
+            <button onclick="placeBet(this)" 
+                    class="bet-btn bg-gradient-to-r from-cyan-500 to-blue-600 p-5 md:p-6 rounded-xl text-left hover:scale-105 active:scale-95">
+              <div class="text-lg md:text-xl">TEAM NEON</div>
+              <div class="text-3xl md:text-4xl font-bold">1.85</div>
+            </button>
+            
+            <button onclick="placeBet(this)" 
+                    class="bet-btn bg-gradient-to-r from-pink-500 to-purple-600 p-5 md:p-6 rounded-xl text-left hover:scale-105 active:scale-95">
+              <div class="text-lg md:text-xl">CHROME REAPERS</div>
+              <div class="text-3xl md:text-4xl font-bold">2.45</div>
+            </button>
           </div>
         </div>
-        
-        <div class="grid grid-cols-2 gap-6 mt-8">
-          <button onclick="placeBet(this)" class="bet-btn bg-gradient-to-r from-cyan-500 to-blue-600 p-6 rounded-xl text-left hover:scale-105 transition">
-            <div class="text-xl">TEAM NEON</div>
-            <div class="text-4xl font-bold">1.85</div>
-            <div class="text-xs opacity-75">x2.0 potential</div>
-          </button>
+
+        <!-- Add more match cards here (Battlefield etc.) -->
+        <!-- Example Battlefield card -->
+        <div class="match-card bg-zinc-900/70 border border-pink-500 rounded-2xl p-5 md:p-6 hover:border-cyan-400 transition-all group">
+          <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            <div>
+              <div class="text-xs md:text-sm text-pink-400">BATTLEFIELD 2042 • CONQUEST</div>
+              <div class="text-xl md:text-2xl font-bold">US Forces vs Pacific Alliance</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs opacity-75">STARTS IN</div>
+              <div class="text-3xl md:text-4xl font-mono neon-pink">2h 12m</div>
+            </div>
+          </div>
           
-          <button onclick="placeBet(this)" class="bet-btn bg-gradient-to-r from-pink-500 to-purple-600 p-6 rounded-xl text-left hover:scale-105 transition">
-            <div class="text-xl">CHROME REAPERS</div>
-            <div class="text-4xl font-bold">2.45</div>
-            <div class="text-xs opacity-75">x2.0 potential</div>
-          </button>
+          <div class="grid grid-cols-2 gap-4 mt-8">
+            <button onclick="placeBet(this)" class="bet-btn bg-gradient-to-r from-cyan-500 to-blue-600 p-5 md:p-6 rounded-xl text-left hover:scale-105 active:scale-95">
+              <div class="text-lg md:text-xl">US FORCES</div>
+              <div class="text-3xl md:text-4xl font-bold">1.65</div>
+            </button>
+            <button onclick="placeBet(this)" class="bet-btn bg-gradient-to-r from-pink-500 to-purple-600 p-5 md:p-6 rounded-xl text-left hover:scale-105 active:scale-95">
+              <div class="text-lg md:text-xl">PACIFIC ALLIANCE</div>
+              <div class="text-3xl md:text-4xl font-bold">2.10</div>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Add more cards for Battlefield etc. similarly -->
-    </div>
-
-    <!-- Betting Slip -->
-    <div class="col-span-4">
-      <div class="bg-zinc-900 border border-cyan-500 rounded-2xl p-6 sticky top-24">
-        <h3 class="text-2xl neon-pink mb-4">BET SLIP</h3>
-        <div id="slip" class="min-h-[300px] text-sm"></div>
-        <div class="mt-6 pt-6 border-t border-zinc-700">
-          <div class="flex justify-between text-lg"><span>Total Stake</span><span class="font-mono" id="total-stake">0 NC</span></div>
-          <button onclick="submitBet()" class="w-full mt-4 py-4 bg-gradient-to-r from-pink-500 to-cyan-500 text-black font-bold text-xl rounded-xl hover:brightness-110">PLACE BET • RUN THE NET</button>
+      <!-- Betting Slip -->
+      <div class="lg:col-span-4">
+        <div class="bg-zinc-900 border border-cyan-500 rounded-2xl p-5 md:p-6 sticky top-6">
+          <h3 class="text-2xl neon-pink mb-4 flex items-center gap-2">
+            <i class="fas fa-ticket-alt"></i> BET SLIP
+          </h3>
+          <div id="slip" class="min-h-[200px] md:min-h-[300px] text-sm space-y-4"></div>
+          
+          <div class="mt-6 pt-6 border-t border-zinc-700">
+            <div class="flex justify-between text-lg mb-2">
+              <span>Total Stake</span>
+              <span class="font-mono text-cyan-400" id="total-stake">0 NC</span>
+            </div>
+            <button onclick="submitBet()" 
+                    class="w-full py-4 bg-gradient-to-r from-pink-500 to-cyan-500 text-black font-bold text-lg rounded-2xl hover:brightness-110 active:scale-95">
+              PLACE BET • RUN THE NET
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Simple JS for interactivity
     let slip = [];
+    
     function placeBet(el) {
-      const match = el.closest('.bg-zinc-900');
-      const team = el.querySelector('.text-xl').textContent;
-      const odds = el.querySelector('.text-4xl').textContent;
+      const match = el.closest('.match-card');
+      const team = el.querySelector('.text-lg, .text-xl').textContent.trim();
+      const odds = el.querySelector('.text-3xl, .text-4xl').textContent.trim();
       
-      slip.push({team, odds});
+      slip.push({team, odds, matchTitle: match.querySelector('.text-xl, .text-2xl').textContent.trim()});
       renderSlip();
-      el.classList.add('!border-green-400');
+      
+      // Visual feedback
+      el.classList.add('!ring-2', '!ring-green-400');
+      setTimeout(() => el.classList.remove('!ring-2', '!ring-green-400'), 800);
     }
     
     function renderSlip() {
       const container = document.getElementById('slip');
+      if (slip.length === 0) {
+        container.innerHTML = `<p class="text-zinc-500 text-center py-8">Your bets will appear here, choom...</p>`;
+        document.getElementById('total-stake').textContent = '0 NC';
+        return;
+      }
+      
       container.innerHTML = slip.map((item, i) => `
-        <div class="flex justify-between py-3 border-b border-zinc-700">
-          <span>${item.team}</span>
-          <span class="text-cyan-400">${item.odds}</span>
+        <div class="flex justify-between items-center py-3 border-b border-zinc-700 last:border-0">
+          <div>
+            <div class="text-xs text-zinc-400">${item.matchTitle}</div>
+            <div>${item.team}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-cyan-400 font-bold">${item.odds}</div>
+          </div>
         </div>
       `).join('');
+      
       document.getElementById('total-stake').textContent = `${slip.length * 50} NC`;
     }
     
     function submitBet() {
-      if (slip.length === 0) return alert("No bets selected, choom.");
-      alert("Bet placed in the shadows. Good luck, runner.");
+      if (slip.length === 0) {
+        alert("No bets selected, runner.");
+        return;
+      }
+      alert("Bet placed in the shadows. Good luck out there.");
       slip = [];
       renderSlip();
     }
     
     function connectWallet() {
-      alert("Jacked in! (Demo wallet connected)");
+      alert("Jacked in! Wallet connected (demo)");
     }
+
+    // Hamburger Menu
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    hamburger.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      const icon = hamburger.querySelector('i');
+      icon.classList.toggle('fa-bars');
+      icon.classList.toggle('fa-times');
+    });
+
+    // Close mobile menu when clicking a link (optional)
+    document.querySelectorAll('#mobile-menu a').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        const icon = hamburger.querySelector('i');
+        icon.classList.add('fa-bars');
+        icon.classList.remove('fa-times');
+      });
+    });
+
+    // Initial render
+    renderSlip();
   </script>
 </body>
 </html>
