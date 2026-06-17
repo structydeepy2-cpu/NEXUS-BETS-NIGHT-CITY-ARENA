@@ -30,7 +30,6 @@
   <div class="scanline"></div>
 
   <div class="ui-overlay min-h-screen relative">
-    <!-- Header + Mobile Menu (same as before) -->
     <header class="border-b border-cyan-500 bg-black/90 backdrop-blur-md sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
@@ -82,7 +81,7 @@
   </div>
 
   <script>
-    let scene, camera, renderer, composer, clock;
+    let scene, camera, renderer, composer, bloomPass, clock;
     let cards = [], rainParticles, sparkParticles;
     let raycaster = new THREE.Raycaster();
     let mouse = new THREE.Vector2();
@@ -133,88 +132,182 @@
           uniforms: { time: { value: 0 } },
           vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
           fragmentShader: `
-            uniform float time;
-            varying vec2 vUv;
-
-            // Hash
-            float hash(vec2 p) {
-              return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+            uniform float time; varying vec2 vUv;
+            float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+            float noise(vec2 p){
+              vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+              float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.));
+              return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
             }
-
-            // Simple value noise
-            float noise(vec2 p) {
-              vec2 i = floor(p);
-              vec2 f = fract(p);
-              f = f*f*(3.0-2.0*f);
-              float a = hash(i);
-              float b = hash(i + vec2(1.0,0.0));
-              float c = hash(i + vec2(0.0,1.0));
-              float d = hash(i + vec2(1.0,1.0));
-              return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+            float fbm(vec2 p){
+              float v=0., a=0.5; float freq=1.;
+              for(int i=0;i<6;i++){ v+=a*noise(p*freq); a*=0.5; freq*=2.; }
+              return v;
             }
-
-            // FRACTAL BROWNIAN MOTION (fBm)
-            float fbm(vec2 p) {
-              float value = 0.0;
-              float amplitude = 0.5;
-              float frequency = 1.0;
-              int octaves = 6;
-              for(int i = 0; i < 6; i++) {
-                value += amplitude * noise(p * frequency);
-                amplitude *= 0.5;
-                frequency *= 2.0;
-              }
-              return value;
-            }
-
-            void main() {
-              vec2 uv = vUv;
-
-              // fBm distortion
-              float turbulence = fbm(uv * 6.0 + time * 1.2);
-              uv += turbulence * 0.045;
-
-              // RGB glitch modulated by fBm
-              float r = sin(uv.x * 25.0 + time * 6.0 + turbulence * 8.0) * 0.018;
-              float g = sin(uv.y * 20.0 + time * 5.0) * 0.012;
-              vec3 neon = mix(vec3(0.0,1.0,1.0), vec3(1.0,0.0,0.8), sin(time + turbulence * 5.0) * 0.5 + 0.5);
-
-              // Scanlines + edge glow
-              float scan = sin(uv.y * 90.0 + time * 25.0) * 0.07 + 0.93;
-              float edge = (1.0 - smoothstep(0.0, 0.12, min(uv.x, 1.0-uv.x))) * 
-                           (1.0 - smoothstep(0.0, 0.12, min(uv.y, 1.0-uv.y))) * 2.5;
-
-              vec3 color = neon * (scan + edge + turbulence * 0.6);
-              gl_FragColor = vec4(color, 0.96);
+            void main(){
+              vec2 uv=vUv; float turb=fbm(uv*6.+time*1.2); uv+=turb*0.045;
+              vec3 neon=mix(vec3(0.,1.,1.),vec3(1.,0.,0.8),sin(time+turb*5.)*0.5+0.5);
+              float scan=sin(uv.y*90.+time*25.)*0.07+0.93;
+              float edge=(1.-smoothstep(0.,0.12,min(uv.x,1.-uv.x)))*(1.-smoothstep(0.,0.12,min(uv.y,1.-uv.y)))*2.5;
+              vec3 color=neon*(scan+edge+turb*0.6);
+              gl_FragColor=vec4(color,0.96);
             }
           `,
-          side: THREE.DoubleSide,
-          transparent: true,
-          depthWrite: false
+          side: THREE.DoubleSide, transparent: true, depthWrite: false
         });
 
         const card = new THREE.Mesh(geometry, material);
-        card.userData = m;
-        card.rotation.x = -0.3;
-        card.position.set(...m.pos);
-        scene.add(card);
-        cards.push(card);
+        card.userData = m; card.rotation.x = -0.3; card.position.set(...m.pos);
+        scene.add(card); cards.push(card);
       });
     }
 
-    // Neon Rain, Sparks, Post-Processing, animate, onResize, onClick, betting, mobile menu functions remain the same as previous version
-    function createNeonRain() { /* ... (copy from previous) */ }
-    function createHolographicSparks() { /* ... */ }
-    function initPostProcessing() { /* ... */ }
-    function animate() { /* update cards + particles + composer.render() */ }
-    function onResize() { /* ... */ }
-    function onClick(e) { /* raycast to place bets */ }
-    function placeBetFromCard(data) { /* ... */ }
-    function renderSlip() { /* ... */ }
-    function submitBet() { /* ... */ }
-    function connectWallet() { alert("Jacked in!"); }
+    function createNeonRain() {
+      const count = 8000;
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      const speeds = new Float32Array(count);
+      for (let i = 0; i < count; i++) {
+        positions[i*3] = Math.random()*80-40;
+        positions[i*3+1] = Math.random()*60-10;
+        positions[i*3+2] = Math.random()*40-20;
+        const hue = Math.random()>0.5?0.8:0.55;
+        colors[i*3]=hue; colors[i*3+1]=0.9; colors[i*3+2]=1.;
+        speeds[i] = 0.8 + Math.random()*1.8;
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      rainParticles = new THREE.Points(geometry, new THREE.PointsMaterial({
+        size:0.12, vertexColors:true, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending, depthTest:false
+      }));
+      scene.add(rainParticles); rainParticles.userData = {speeds};
+    }
 
-    function initMobileMenu() { /* same hamburger logic */ }
+    function createHolographicSparks() {
+      const count = 1200;
+      const positions = new Float32Array(count*3);
+      const colors = new Float32Array(count*3);
+      for(let i=0;i<count;i++){
+        positions[i*3]=(Math.random()-0.5)*40;
+        positions[i*3+1]=Math.random()*20;
+        positions[i*3+2]=(Math.random()-0.5)*30;
+        const c = Math.random()>0.5?new THREE.Color(0xff00ff):new THREE.Color(0x00ffff);
+        colors[i*3]=c.r; colors[i*3+1]=c.g; colors[i*3+2]=c.b;
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions,3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors,3));
+      sparkParticles = new THREE.Points(geometry, new THREE.PointsMaterial({
+        size:0.08, vertexColors:true, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending
+      }));
+      scene.add(sparkParticles);
+    }
+
+    function initPostProcessing() {
+      composer = new THREE.EffectComposer(renderer);
+      composer.addPass(new THREE.RenderPass(scene, camera));
+
+      bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.8,   // strength (tune this!)
+        0.6,   // radius
+        0.15   // threshold
+      );
+      composer.addPass(bloomPass);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      const delta = clock.getDelta();
+
+      cards.forEach(card => {
+        card.material.uniforms.time.value = t;
+        card.rotation.y = Math.sin(t * 0.5 + card.position.x) * 0.08;
+      });
+
+      if (rainParticles) {
+        const pos = rainParticles.geometry.attributes.position.array;
+        const speeds = rainParticles.userData.speeds;
+        for (let i = 0; i < pos.length / 3; i++) {
+          pos[i*3 + 1] -= speeds[i] * delta * 25;
+          if (pos[i*3 + 1] < -15) pos[i*3 + 1] = 50;
+        }
+        rainParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      if (sparkParticles) sparkParticles.rotation.y = t * 0.05;
+
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onClick(e) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(cards);
+      if (intersects.length > 0) {
+        const data = intersects[0].object.userData;
+        placeBetFromCard(data);
+      }
+    }
+
+    function placeBetFromCard(data) {
+      slip.push({team: data.title.split(' vs ')[0], odds: data.odds1, matchTitle: data.title});
+      slip.push({team: data.title.split(' vs ')[1], odds: data.odds2, matchTitle: data.title});
+      renderSlip();
+      alert(`Jacked into ${data.game}! Bet options added.`);
+    }
+
+    function renderSlip() {
+      const container = document.getElementById('slip');
+      if (slip.length === 0) {
+        container.innerHTML = `<p class="text-zinc-500 text-center py-8">Click glowing cards to bet...</p>`;
+        document.getElementById('total-stake').textContent = '0 NC';
+        return;
+      }
+      container.innerHTML = slip.map(item => `
+        <div class="flex justify-between py-3 border-b border-zinc-700">
+          <div><span class="text-xs text-zinc-400">${item.matchTitle}</span><br>${item.team}</div>
+          <span class="text-cyan-400 font-bold">${item.odds}</span>
+        </div>
+      `).join('');
+      document.getElementById('total-stake').textContent = `${slip.length * 50} NC`;
+    }
+
+    function submitBet() {
+      if (slip.length === 0) return alert("No bets selected, choom.");
+      alert("Bet placed in the shadows. Good luck, runner.");
+      slip = []; renderSlip();
+    }
+
+    function connectWallet() { alert("Jacked in — Wallet connected (demo)"); }
+
+    function initMobileMenu() {
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const icon = hamburger.querySelector('i');
+      hamburger.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        setTimeout(() => mobileMenu.classList.toggle('open'), 10);
+        icon.classList.toggle('fa-bars'); icon.classList.toggle('fa-times');
+      });
+      document.querySelectorAll('#mobile-menu a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden','open'); // close
+          icon.classList.add('fa-bars'); icon.classList.remove('fa-times');
+        });
+      });
+    }
 
     window.onload = () => {
       initThree();
